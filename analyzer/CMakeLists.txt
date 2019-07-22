@@ -5,7 +5,7 @@ include(FetchContent)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_REQUIRED_FLAGS -std=c++17)
+set(CMAKE_REQUIRED_FLAGS "-std=c++17")
 set(CMAKE_COMPILE_OPTIONS "-Wpedantic;-Wall;-Wextra")
 set(CMAKE_CXX_COMPILER "clang++")
 
@@ -32,17 +32,6 @@ add_executable(stock_analyzer
     src/main.cpp
 )
 
-
-install(TARGETS stock_analyzer RUNTIME DESTINATION bin)
-
-set(CPACK_GENERATOR DEB)
-
-set(CPACK_PACKAGE_VERSION_MAJOR "0")
-set(CPACK_PACKAGE_VERSION_MINOR "0")
-set(CPACK_PACKAGE_VERSION_PATCH "0")
-
-set(CPACK_PACKAGE_CONTACT sildtm@icloud.com)
-
-set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
-
-include(CPack)
+target_link_libraries(stock_analyzer
+    stdc++fs
+)

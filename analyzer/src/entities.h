@@ -2,6 +2,7 @@
 #include <map>
 #include <csv.h>
 #include <optional>
+#include <filesystem>
 
 namespace NStockAnalyzer {
 
@@ -49,12 +50,16 @@ auto ParseTickersGeneralData() {
 
 auto ParseTickerDaysData() {
     using TTickerDaysData = std::map<std::string, TTickerDayData>;
-    "/Users/d.korchagin/Projects/Personal/imt/data/AAPL/history_data.csv"
     std::map<std::string, TTickerDaysData> result;
 
-    for (auto i: {123}) {
+    for (auto& p: std::filesystem::directory_iterator("/Users/d.korchagin/Projects/Personal/imt/data")) {
+        if (!p.is_directory()) {
+            continue;
+        }
+        auto historyDataPath = p.path().string() + "/history_data.csv"; 
+        std::cout << historyDataPath << std::endl;
         TTickerDaysData daysData;
-        io::CSVReader<6> in(tickerDataPath);
+        io::CSVReader<6> in(historyDataPath);
         in.read_header(io::ignore_extra_column, "Date", "Open", "High", "Low", "Close", "Volume");
         TTickerDayData entity;
         try {
@@ -64,6 +69,7 @@ auto ParseTickerDaysData() {
         } catch (const io::error::base& e) {
             std::cerr << e.what() << std::endl;
         }
+        result.insert(std::make_pair(p.path(), daysData));
     }
     
     
