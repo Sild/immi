@@ -20,10 +20,11 @@ def get_all_companies():
 
 companies = get_all_companies()
 cookies = {
-    "APID": "UP36c02d67-a7ee-11e9-9ad1-06f67bc23ce4",
-    "PRF": "t%3DAAPL",
-    "APIDTS": "1563730882",
-    "B": "b0ckm2teis1tl&b=3&s=ja",
+    "B": "b7vsujdgcb8p1&b=3&s=k5",
+    "GUC": "AQEBAQFgxvRgz0Ii7gTL",
+    "A1": "d=AQABBCGjxWACEIaBXrYBU-OZMRqH3Zue_7MFEgEBAQH0xmDPYAAAAAAA_eMAAAcIIaPFYJue_7M&S=AQAAAii9BcIMKs0spHDaoVC0EVc",
+    "A3": "d=AQABBCGjxWACEIaBXrYBU-OZMRqH3Zue_7MFEgEBAQH0xmDPYAAAAAAA_eMAAAcIIaPFYJue_7M&S=AQAAAii9BcIMKs0spHDaoVC0EVc",
+    "A1S": "d=AQABBCGjxWACEIaBXrYBU-OZMRqH3Zue_7MFEgEBAQH0xmDPYAAAAAAA_eMAAAcIIaPFYJue_7M&S=AQAAAii9BcIMKs0spHDaoVC0EVc&j=WORLD"
 }
 #  Saturday, July 20, 1985 8:00:00 PM - Saturday, July 20, 2019 9:00:00 PM
 url_template = "https://query1.finance.yahoo.com/v7/finance/download/{ticker}?period1=315532800&period2=1563656400&interval=1d&events=history&crumb=0BwI6UkuB1w"
@@ -40,6 +41,8 @@ for ticker in companies:
     url = url_template.format(ticker=ticker)
     response = requests.get(url, cookies=cookies, headers={})
     response_data = response.text
+    print(response_data)
+    break 
     ticker_dir = "{}/../data/{}".format(get_script_dir(), ticker)
     if not os.path.exists(ticker_dir):
         os.makedirs(ticker_dir)
