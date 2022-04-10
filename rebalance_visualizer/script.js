@@ -1,5 +1,5 @@
 
-THROTTLING_DATA = 5
+THROTTLING_DATA = 10
 
 source_data = new Map()
 var MY_CHART = null
@@ -46,13 +46,15 @@ function visualize(e)
     console.log("visualization started!")
     var series_data = []
     for (const [key, value] of source_data.entries()) {
+        randomColor = "#" + Math.floor(Math.random()*16777215).toString(16);
+        console.log(randomColor)
         series_data.push({
             label: key,
             // backgroundColor: "rgba(255,99,132,0.2)",
-            borderColor: "rgba(255,99,132,1)",
+            borderColor: randomColor,
             borderWidth: 2,
-            hoverBackgroundColor: "rgba(255,99,132,0.4)",
-            hoverBorderColor: "rgba(255,99,132,1)",
+            hoverBackgroundColor: randomColor,
+            hoverBorderColor:randomColor,
             data: value,
             // xAxisID: "time",
             // yAxisId: "amount"
