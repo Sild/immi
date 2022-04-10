@@ -1,5 +1,8 @@
 
-data = {}
+THROTTLING_DATA = 5
+
+source_data = new Map()
+var MY_CHART = null
 
 function readFiles(e)
 {
@@ -19,13 +22,16 @@ function readFiles(e)
             var ticker_data = []
             var splitted = contents.split("\n")
             for (let i = 1; i < splitted.length; i++) {
+                if (i % THROTTLING_DATA != 0)
+                    continue
                 var line = splitted[i].split(",")
                 var value = parseFloat(line[5])
                 if (this.FileName.includes("dollar"))
                     value *= 80
-                ticker_data.push({date: line[0], close_cost: value})
+                ticker_data.push({x: line[0], y: value})
             }
-            data[this.FileName] = ticker_data
+            ticker_data.sort()
+            source_data.set(this.FileName, ticker_data)
             console.log("reeding file " + this.FileName + " done.")
         };
         reader.FileName = file_name
@@ -36,45 +42,42 @@ function readFiles(e)
 
 function visualize(e)
 {
-    console.log(data)
+    console.log(source_data)
     console.log("visualization started!")
-    var chart_data = {
-        labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"],
-        datasets: [
-          {
-            label: "Dataset #1",
-            backgroundColor: "rgba(255,99,132,0.2)",
+    var series_data = []
+    for (const [key, value] of source_data.entries()) {
+        series_data.push({
+            label: key,
+            // backgroundColor: "rgba(255,99,132,0.2)",
             borderColor: "rgba(255,99,132,1)",
             borderWidth: 2,
             hoverBackgroundColor: "rgba(255,99,132,0.4)",
             hoverBorderColor: "rgba(255,99,132,1)",
-            data: [65, 59, 20, 81, 56, 55, 40]
-          }
-        ]
-      };
-      
-    // var option = {
-    //     responsive: false,
-    //     scales: {
-    //         y: {
-    //             stacked: true,
-    //             grid: {
-    //                 display: true,
-    //                 color: "rgba(255,99,132,0.2)"
-    //             }
-    //         },
-    //         x: {
-    //             grid: {
-    //                 display: false
-    //             }
-    //         }
-    //     }
-    //   };
-      
-    new Chart("chart", {
-        type: "bar",
-        // options: option,
-        data: chart_data
+            data: value,
+            // xAxisID: "time",
+            // yAxisId: "amount"
+        })
+    }
+    console.log(series_data)
+    var chart_data = {
+        datasets: series_data
+    };
+    if (MY_CHART)
+        MY_CHART.destroy()
+
+    MY_CHART = new Chart("chart", {
+        type: "line",
+        data: chart_data,
+        options: {
+            scales: {
+                x: {
+                    type: 'time',
+                    // time: {
+                    //     unit: 'day'
+                    // }
+                }
+            }
+        }
     });
 
 }
