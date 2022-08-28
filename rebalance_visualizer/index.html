@@ -3,6 +3,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/moment@2.27.0"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@0.1.1"></script>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
     <input type="file" id="file-input" multiple/>
@@ -10,8 +11,11 @@
     <input type="number" id="start_sum" placeholder="start_sum">
     <input type="button" id="visualize" value="visualize">
 
-    <div class="chart-container" style="position: relative; height:40vh; width:80vw">
-        <canvas id="chart"></canvas>
+    <div class="chart-container">
+        <canvas id="chart-row-data"></canvas>
+    </div></body>
+    <div class="chart-container">
+        <canvas id="chart-row-data2"></canvas>
     </div></body>
 <script src="script.js"></script>
 </html>
