@@ -3,19 +3,38 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/moment@2.27.0"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@0.1.1"></script>
+<!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.2.1/js/bootstrap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.4/js/select2.min.js"></script> -->
 <link rel="stylesheet" href="style.css">
+<!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2-bootstrap-css/1.4.6/select2-bootstrap.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.4/css/select2.min.css"/> -->
 </head>
 <body>
     <input type="file" id="file-input" multiple/>
-    <input type="number" id="period" placeholder="rebalance period">
-    <input type="number" id="start-amount" placeholder="start amount">
+    rebalance period
+    <select id="period" multiple="multiple">
+        <option selected>0</option>
+        <option>30</option>
+        <option>60</option>
+        <option>90</option>
+        <option>180</option>
+        <option>360</option>
+    </select>
+    <input type="number" id="start-amount" placeholder="start amount" value="100000">
     <input type="button" id="visualize" value="visualize">
 
     <div class="chart-container">
         <canvas id="chart-row-data"></canvas>
-    </div></body>
+    </div>
     <div class="chart-container">
-        <canvas id="chart-row-data2"></canvas>
-    </div></body>
+        <canvas id="chart-amount"></canvas>
+    </div>
+    <div class="chart-container">
+        <canvas id="chart-tickers-count"></canvas>
+    </div>
+
+</body>
 <script src="script.js"></script>
 </html>

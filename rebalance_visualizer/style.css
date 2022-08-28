@@ -1,4 +1,11 @@
 .chart-container {
     padding-top: 20px;
     position: relative; height:300px; width:500px;
+    display: inline-block;
+    float: left;
+}
+
+#period {
+    width: 160px;
+    height: 100px;
 }

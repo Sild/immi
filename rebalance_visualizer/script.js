@@ -4,6 +4,8 @@ THROTTLING_DATA = 10
 SOURCE_DATA = new Map() // ticker -> [(x1, y1), (x2, y2)]
 TIME_POINTS = new Array() // [x1, x2, x3...] из значений мапки, описанной выше
 CHARTS = new Map() // xpath_id -> Chart obj
+CASH_KEY = "cashRub"
+
 
 function fillMock() {
     console.log("filling mock data...")
@@ -160,55 +162,77 @@ function draw(xpath_chart_id, data, title_text) {
 
 // cчитает какое количество бумаг каждого типа нужно иметь, чтобы портфель был сбалансированным
 // начиная с переданной даты и до конца доступных дней
-function calcBalancedTickersCount(source_data, timestamp, previous_count) {
+function calcBalancedTickersCount(sourceData, period) {
+    currentAmount = document.getElementById('start-amount').value
+    if (period == 0)
+        period = TIME_POINTS.length
+    console.log("calculate tickers count with rebalance period =", period, ", start-amount =", currentAmount)
+
     // проверим что входные данные валидны для алгоритма
-    for (const [_, data] of source_data) {
+    console.assert(TIME_POINTS.length > 0)
+    for (const [_, data] of sourceData) {
         keys = data.map(a => a.x);
         console.assert(keys.length == TIME_POINTS.length)
         for (i = 0; i < keys.length; ++i) {
             console.assert(keys[i] == TIME_POINTS[i])
         }
     }
-    startAmount = document.getElementById('start-amount').value
-    if (previous_count)
-    {
-        startAmount = 0
-        // посчитаем сколько будет денег, когда продадим то что есть
-        for (const [key, value] of previous_count) {
-            for (i = 0; i < value.length; ++i) {
-                serie = value[i]
-                if (serie.x >= timestamp) {  // попали в запрошенную дату
-                    // количество умножаем на стоимость в этот день
-                    // уж постараемся чтобы таймстемпы у количества и сырых данных совпадали
-                    // возможным расхождением из-за дырок в данных пренебрегаем
-                    startAmount += serie.y * source_data[key][i]
-                    break
-                }
-            }
-        }
-    }
-    amountForEach = startAmount / source_data.length
 
-    countsPerTicker = new Map()
-    if (!previous_count) {
-        // простой кейс - берем первую стоимость которая есть
-        for (const [key, value] of source_data.entries()) {
-            countsPerTicker.set(key, amountForEach / value[0].y)
-        }
-    } else {
-        // кейс сложнее - нужно посчитать сколько можно купить в правильный день
-        for (const [key, value] of data.entries()) {
-            for (i = 0; i < value.length; ++i) {
-                serie = value[i]
-                if (serie.x >= timestamp) {  // попали в запрошенную дату
-                    countsPerTicker[key] = amountForEach / value[0].y
-                    break
-                }
+
+    tickersCount = new Map()
+    for (i = 0; i < TIME_POINTS.length; ++i) {
+        if (i % period != 0) {
+            // повторим предыдущее значение
+            for (const [ticker, data] of tickersCount) {
+                data.push({x: TIME_POINTS[i], y: data[i-1].y})
+                tickersCount.set(ticker, data)
             }
-            
+            continue
         }
+        // аккумулируем обратно деньжата при необходимости
+        if (i != 0) {
+            for (const [ticker, data] of tickersCount) {
+                if (ticker == CASH_KEY) // костыльнем.
+                    continue
+                // в текущий день у нас статистики еще нет, так что берем предыдущую
+                // а вот цена уже есть
+                currentAmount += data[i - 1].y * sourceData.get(ticker)[i].y
+            }
+        }
+
+        amountForEach = currentAmount / sourceData.size
+        for (const [ticker, data] of sourceData) {
+            count = (amountForEach / data[i].y) >> 0 // какое-то целочисленное деление в js
+            counter = tickersCount.get(ticker)
+            if (!counter)
+                counter = new Array()
+            counter.push({x: TIME_POINTS[i], y: count})
+            tickersCount.set(ticker, counter)
+            currentAmount -= count * data[i].y // вычтем то что купили из текущей суммы
+        }
+        cashVal = tickersCount.get(CASH_KEY)
+        if (!cashVal)
+        cashVal = new Array()
+        cashVal.push({x:TIME_POINTS[i], y: currentAmount})
+        tickersCount.set(CASH_KEY, cashVal)
+
+        
     }
-    return countsPerTicker
+    return tickersCount
+}
+
+function calcAmount(sourceData, tickersCount) {
+    // довольно просто - умножаем количество на текущую ставку и прибавляем наличку
+    data = new Array()
+    for (i = 0; i < TIME_POINTS.length; ++i) {
+        daySum = 0
+        for (const [ticker, data] of sourceData.entries()) {
+            daySum += (data[i].y * tickersCount.get(ticker)[i].y)
+        }
+        daySum += tickersCount.get(CASH_KEY)[i].y
+        data.push({x: TIME_POINTS[i], y: daySum})
+    }
+    return data
 }
 
 function visualize(e) {
@@ -216,10 +240,16 @@ function visualize(e) {
     // console.log(SOURCE_DATA)
     console.log("visualization started!")
     draw('chart-row-data', SOURCE_DATA, 'price')
-    countsPerTicker = calcBalancedTickersCount(SOURCE_DATA, null, null)
-    console.log(countsPerTicker)
-    draw('chart-row-data2', countsPerTicker, 'count')
-
+    
+    amountTotal = new Map()
+    for (option of document.getElementById('period').options) {
+        if (!option.selected)
+            continue
+        tickersCount = calcBalancedTickersCount(SOURCE_DATA, option.value)
+        draw('chart-tickers-count', tickersCount, 'count for rebalance ' + option.value)
+        amountTotal.set(option.value, calcAmount(SOURCE_DATA, tickersCount))
+    }
+    draw('chart-amount', amountTotal, 'amount')
 }
 
 document.getElementById('file-input').addEventListener('change', readFiles, false);
