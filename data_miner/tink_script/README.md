@@ -1,0 +1,1 @@
+from https://github.com/Tinkoff/investAPI/blob/main/src/marketdata/download_md.sh
