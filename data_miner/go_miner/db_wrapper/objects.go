@@ -11,6 +11,15 @@ type Instrument struct {
 	ISIN string `gorm:"index:ISIN,unique"`
 }
 
+type Currency struct {
+	gorm.Model
+	sdk.Instrument
+	FIGI string `gorm:"index:FIGI,unique"`
+	ISIN string `sql:"-:all"`
+	Currency string `sql:"-:all"`
+	Type string `sql:"-:all"`
+}
+
 type Candle struct {
 	gorm.Model
 	sdk.Instrument

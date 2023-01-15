@@ -36,11 +36,14 @@ func (dbCli *DbCli) UpdateSchema() error {
 
 	models := []interface{}{
 		(*Instrument)(nil),
+		(*Currency)(nil),
 		(*Candle)(nil),
 	}
 
 	for _, model := range models {
-		dbCli.impl.AutoMigrate(model)
+		if err := dbCli.impl.AutoMigrate(model); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -62,10 +65,32 @@ func (dbCli *DbCli) GetDbInstruments() (*map[string]Instrument, error) {
 	return &instruments, nil
 }
 
-func (dbCli *DbCli) CreateInstrument(obj *Instrument) error {
+func (dbCli *DbCli) GetDbCurrencies() (*map[string]Currency, error) {
 	dbCli.mtx.Lock()
 	defer dbCli.mtx.Unlock()
 
+	res_data := make([]Currency, 0)
+	result := dbCli.impl.Find(&res_data)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	currencies := make(map[string]Currency)
+	for _, v := range res_data {
+		currencies[v.FIGI] = v
+	}
+	return &currencies, nil
+}
+
+func (dbCli *DbCli) CreateInstrument(obj *Instrument) error {
+	dbCli.mtx.Lock()
+	defer dbCli.mtx.Unlock()
+	return dbCli.impl.Create(&obj).Error
+}
+
+func (dbCli *DbCli) CreateCurrency(obj *Currency) error {
+	dbCli.mtx.Lock()
+	defer dbCli.mtx.Unlock()
 	return dbCli.impl.Create(&obj).Error
 }
 
