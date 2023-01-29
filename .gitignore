@@ -3,3 +3,4 @@ analyzer/build
 analyzer/cmake-build-debug
 .idea
 go.sum
+.vscode

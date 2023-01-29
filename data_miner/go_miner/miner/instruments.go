@@ -12,14 +12,14 @@ func SyncInstruments(dbCli *db_wrapper.DbCli, investCli *tink_wrapper.TinkCli, c
 	logger.Info("started")
 	syncInstrumentsImpl(dbCli, investCli)
 	syncCurrenciesImpl(dbCli, investCli)
-	ticker := time.NewTicker(10 * time.Second)
+	ticker := time.NewTicker(60 * time.Second)
 	for {
 		select {
 		case <-ticker.C:
 			syncInstrumentsImpl(dbCli, investCli)
 			syncCurrenciesImpl(dbCli, investCli)
 		case <-(*ctx).Done():
-			logger.Info("done by context")
+			logger.Info("done by context interruption")
 			onDone()
 			return
 		}
@@ -46,9 +46,12 @@ func syncInstrumentsImpl(dbCli *db_wrapper.DbCli, investCli *tink_wrapper.TinkCl
 	created := make([]*db_wrapper.Instrument, 0)
 	for _, v := range actualInstruments {
 		if _, found := (*dbInstruments)[v.ISIN]; !found {
-			dbCli.CreateInstrument(&v)
-			logger.Debug("Instrument created: %s (%s)", v.Ticker, v.Name)
-			created = append(created, &v)
+			if err := dbCli.CreateInstrument(&v); err != nil {
+				logger.Warn("Fail to create instrument ticker='%s', name='%s', err='%s'", v.Ticker, v.Name, err.Error())
+			} else {
+				logger.Debug("Instrument created: %s (%s)", v.Ticker, v.Name)
+				created = append(created, &v)
+			}
 		}
 	}
 	logger.Info("Created instruments count: %d", len(created))
@@ -74,9 +77,13 @@ func syncCurrenciesImpl(dbCli *db_wrapper.DbCli, investCli *tink_wrapper.TinkCli
 	created := make([]*db_wrapper.Currency, 0)
 	for _, v := range actualCurrencies {
 		if _, found := (*dbCurrencies)[v.FIGI]; !found {
-			dbCli.CreateCurrency(&v)
-			logger.Debug("Currency created: %s (%s)", v.Ticker, v.Name)
-			created = append(created, &v)
+			if err := dbCli.CreateCurrency(&v); err != nil {
+				logger.Warn("Fail to create currency with ticker='%s', name='%s', err='%s'", v.Ticker, v.Name, err.Error())
+			} else {
+				logger.Debug("Currency created: %s (%s)", v.Ticker, v.Name)
+				created = append(created, &v)
+			}
+
 		}
 	}
 	logger.Info("Created currencies count: %d", len(created))

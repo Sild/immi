@@ -64,7 +64,7 @@ func main() {
 
 	var wg sync.WaitGroup
 	wg.Add(1)
-	go miner.SyncInstruments(dbCli, investCli, &ctx, func() { wg.Done() })
-	// go miner.SyncHistory(dbCli, investCli, &ctx, func() { wg.Done() })
+	// go miner.SyncInstruments(dbCli, investCli, &ctx, func() { wg.Done() })
+	go miner.SyncHistoryCandles(dbCli, investCli, &ctx, func() { wg.Done() })
 	wg.Wait()
 }

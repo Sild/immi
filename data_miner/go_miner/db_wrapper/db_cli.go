@@ -2,7 +2,9 @@ package db_wrapper
 
 import (
 	"fmt"
+	"miner/helper"
 	"miner/logger"
+	"time"
 
 	"sync"
 
@@ -37,7 +39,7 @@ func (dbCli *DbCli) UpdateSchema() error {
 	models := []interface{}{
 		(*Instrument)(nil),
 		(*Currency)(nil),
-		(*Candle)(nil),
+		(*HistoricalCandle)(nil),
 	}
 
 	for _, model := range models {
@@ -82,6 +84,38 @@ func (dbCli *DbCli) GetDbCurrencies() (*map[string]Currency, error) {
 	return &currencies, nil
 }
 
+func (dbCli *DbCli) GetLastMinuteCandleTime(figi string) (time.Time, error) {
+	dbCli.mtx.Lock()
+	defer dbCli.mtx.Unlock()
+
+	rows, err := dbCli.impl.Model(&HistoricalCandle{}).Select("max(date) as max_date").Where("figi = ?", figi).Rows()
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	defer rows.Close()
+
+	type result struct {
+		Date    time.Time
+		MaxDate string
+	}
+	var res result
+
+	for rows.Next() {
+		// ScanRows is a method of `gorm.DB`, it can be used to scan a row into a struct
+		if err := dbCli.impl.ScanRows(rows, &res); err != nil {
+			return time.Time{}, err
+		}
+		if res.MaxDate == "" {
+			return time.Unix(0, 0).UTC(), nil
+		}
+		logger.Info("%s", res.Date)
+		logger.Info("%s", res.MaxDate)
+	}
+
+	return helper.DBDateFromStr(res.MaxDate), nil
+}
+
 func (dbCli *DbCli) CreateInstrument(obj *Instrument) error {
 	dbCli.mtx.Lock()
 	defer dbCli.mtx.Unlock()
@@ -94,17 +128,28 @@ func (dbCli *DbCli) CreateCurrency(obj *Currency) error {
 	return dbCli.impl.Create(&obj).Error
 }
 
-func (dbCli *DbCli) getInstrumentByFigi() *Instrument {
+func (dbCli *DbCli) CreateHistoricalCandle(obj *HistoricalCandle) error {
 	dbCli.mtx.Lock()
 	defer dbCli.mtx.Unlock()
-
-	// res := ms([]Instrument, 0)
+	if dbCli.impl.Model(&obj).Where("figi = ? and ts = ? and interval = ?", obj.FIGI, obj.TS, obj.Interval).Updates(&obj).RowsAffected == 0 {
+		return dbCli.impl.Create(&obj).Error
+	} else {
+		logger.Debug("figi='%s' for ts='%s' updated instead of created", obj.FIGI, obj.TS)
+	}
 	return nil
 }
 
-func (dbCli *DbCli) getInstrumentByTicker() *Instrument {
-	dbCli.mtx.Lock()
-	defer dbCli.mtx.Unlock()
+// func (dbCli *DbCli) getInstrumentByFigi() *Instrument {
+// 	dbCli.mtx.Lock()
+// 	defer dbCli.mtx.Unlock()
 
-	return &Instrument{}
-}
+// 	// res := ms([]Instrument, 0)
+// 	return nil
+// }
+
+// func (dbCli *DbCli) getInstrumentByTicker() *Instrument {
+// 	dbCli.mtx.Lock()
+// 	defer dbCli.mtx.Unlock()
+
+// 	return &Instrument{}
+// }
