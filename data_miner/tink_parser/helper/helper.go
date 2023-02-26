@@ -3,11 +3,11 @@ package helper
 import "time"
 
 func FormatDate(ts time.Time) string {
-	return ts.Format("2006-01-02")
+	return ts.Format("2006-01-02 -0700")
 }
 
 func FormatTime(ts time.Time) string {
-	return ts.Format("2006-01-02 15:04:05")
+	return ts.Format("2006-01-02 15:04:05 -0700")
 
 }
 

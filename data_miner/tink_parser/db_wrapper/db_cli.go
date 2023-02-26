@@ -50,6 +50,17 @@ func (dbCli *DbCli) UpdateSchema() error {
 	return nil
 }
 
+func (dbCli *DbCli) GetDbInstrumentByTicker(ticker string) (*Instrument, error) {
+	dbCli.mtx.Lock()
+	defer dbCli.mtx.Unlock()
+	var res Instrument
+	dbCli.impl.First(&res, "ticker = ?", ticker)
+	if res.FIGI == "" {
+		return nil, fmt.Errorf("instrument for ticker not found")
+	}
+	return &res, nil
+}
+
 func (dbCli *DbCli) GetDbInstruments() (*map[string]Instrument, error) {
 	dbCli.mtx.Lock()
 	defer dbCli.mtx.Unlock()
@@ -88,7 +99,7 @@ func (dbCli *DbCli) GetLastMinuteCandleTime(figi string) (time.Time, error) {
 	dbCli.mtx.Lock()
 	defer dbCli.mtx.Unlock()
 
-	rows, err := dbCli.impl.Model(&HistoricalCandle{}).Select("max(date) as max_date").Where("figi = ?", figi).Rows()
+	rows, err := dbCli.impl.Model(&HistoricalCandle{}).Select("max(date) as max_date").Where("figi = ? and interval != '1min'", figi).Rows()
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -107,7 +118,7 @@ func (dbCli *DbCli) GetLastMinuteCandleTime(figi string) (time.Time, error) {
 			return time.Time{}, err
 		}
 		if res.MaxDate == "" {
-			return time.Unix(0, 0).UTC(), nil
+			return time.Time{}, fmt.Errorf("figi='%s': minute-candles not found", figi)
 		}
 		logger.Info("%s", res.Date)
 		logger.Info("%s", res.MaxDate)

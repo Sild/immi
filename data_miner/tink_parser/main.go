@@ -5,11 +5,10 @@ import (
 	"flag"
 	"miner/db_wrapper"
 	"miner/logger"
-	"miner/miner"
 	"miner/tink_wrapper"
+	"miner/tsignal"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 )
 
@@ -44,6 +43,7 @@ func main() {
 
 	flag.Parse()
 	validateSettings()
+	// zerolog.SetGlobalLevel(zerolog.InfoLevel)
 
 	investCli := tink_wrapper.NewInvestCli(token)
 	dbCli, err := db_wrapper.NewDbCli(dbHost, dbPort, dbUser, dbPassword, dbName)
@@ -56,15 +56,17 @@ func main() {
 		logger.Fatal("Fail to update schema: '%s'", err.Error())
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	_, cancel := context.WithCancel(context.Background())
 
 	osChannel := make(chan os.Signal, 1)
 	signal.Notify(osChannel, os.Interrupt, syscall.SIGTERM)
 	go signalHandler(osChannel, cancel)
 
-	var wg sync.WaitGroup
-	wg.Add(1)
-	// go miner.SyncInstruments(dbCli, investCli, &ctx, func() { wg.Done() })
-	go miner.SyncHistoryCandles(dbCli, investCli, &ctx, func() { wg.Done() })
-	wg.Wait()
+	tsignal.Run(dbCli, investCli)
+
+	// var wg sync.WaitGroup
+	// wg.Add(1)
+	// // go miner.SyncInstruments(dbCli, investCli, &ctx, func() { wg.Done() })
+	// go miner.SyncHistoryCandles(dbCli, investCli, &ctx, func() { wg.Done() })
+	// wg.Wait()
 }

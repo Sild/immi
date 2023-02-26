@@ -26,8 +26,8 @@ type Currency struct {
 type HistoricalCandle struct {
 	gorm.Model
 	sdk.Candle
-	FIGI     string             `gorm:"index:FIGI,uniqueIndex:FIGI_TS_INTERVAL"`
+	FIGI     string             `gorm:"index:FIGI_TS_INTERVAL,unique"`
 	Date     datatypes.Date     `gorm:"index:DATE"`
-	TS       time.Time          `gorm:"uniqueIndex:FIGI_TS_INTERVAL"`
-	Interval sdk.CandleInterval `gorm:"index:INTERVAL,uniqueIndex:FIGI_TS_INTERVAL"`
+	TS       time.Time          `gorm:"index:FIGI_TS_INTERVAL,unique"`
+	Interval sdk.CandleInterval `gorm:"index:FIGI_TS_INTERVAL,unique"`
 }

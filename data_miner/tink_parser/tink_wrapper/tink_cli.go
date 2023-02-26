@@ -72,9 +72,16 @@ func (cli *TinkCli) GetHistoricalCandles(figi string, from time.Time, to time.Ti
 		return nil, err
 	}
 	for _, cndl := range candles {
-		date := cndl.TS
-		date.Truncate(24 * time.Hour)
-		result = append(result, db_wrapper.HistoricalCandle{Candle: cndl, FIGI: cndl.FIGI, Date: datatypes.Date(date), TS: cndl.TS, Interval: cndl.Interval})
+		result = append(
+			result,
+			db_wrapper.HistoricalCandle{
+				Candle:   cndl,
+				FIGI:     cndl.FIGI,
+				Date:     datatypes.Date(cndl.TS),
+				TS:       cndl.TS,
+				Interval: cndl.Interval,
+			},
+		)
 	}
 
 	return result, nil
