@@ -4,3 +4,4 @@ analyzer/cmake-build-debug
 .idea
 go.sum
 .vscode
+a.out
