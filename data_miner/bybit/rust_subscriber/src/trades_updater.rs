@@ -1,12 +1,10 @@
+use std::sync::RwLock;
 use std::{
     cmp,
     collections::HashMap,
-    sync::{Arc, Mutex},
+    sync::Arc,
     thread::{self, JoinHandle},
 };
-
-use thread_priority::*;
-use thread_priority::ThreadBuilderExt;
 
 use bybit::{ws::response::SpotPublicResponse, WebSocketApiClient};
 
@@ -19,7 +17,7 @@ use crypto_rest_client::BybitRestClient;
 const SUBSCRIBE_BATCH_SIZE: usize = 5;
 
 pub fn populate_trades(
-    market_data: Arc<Mutex<market_data::MarketData>>,
+    trades: Arc<RwLock<market_data::Trades>>,
     sym_to_pair: Arc<HashMap<String, objects::SymbolPair>>,
     symbols: Vec<objects::SymbolPair>,
 ) {
@@ -27,7 +25,7 @@ pub fn populate_trades(
         // SpotPublicResponse::Orderbook(res) => println!("Orderbook: {:?}", res),
         SpotPublicResponse::Trade(res) => {
             for d in res.data.iter() {
-                market_data.lock().unwrap().add(d, sym_to_pair.as_ref());
+                trades.write().unwrap().add(d, sym_to_pair.as_ref());
             }
             // println!("Trade: {:?}", res);
         }
@@ -55,9 +53,9 @@ pub fn populate_trades(
 }
 
 pub fn run_trades_population(
-    market_data: &Arc<Mutex<market_data::MarketData>>,
-    sym_to_pair: &Arc<HashMap<String, objects::SymbolPair>>,
-    pairs: &Vec<objects::SymbolPair>,
+    trades: &Arc<RwLock<market_data::Trades>>,
+    sym_to_pair: &Arc<HashMap<String, SymbolPair>>,
+    pairs: &Vec<SymbolPair>,
 ) -> Vec<JoinHandle<()>> {
     let mut threads = Vec::default();
     for i in (0..pairs.len()).step_by(SUBSCRIBE_BATCH_SIZE) {
@@ -72,12 +70,11 @@ pub fn run_trades_population(
             after_last,
             pairs.len()
         );
-        let md_copy = market_data.clone();
-        let s_t_p_copy = sym_to_pair.clone();
+        let trades = trades.clone();
+        let sym_to_pair = sym_to_pair.clone();
 
         let th = thread::spawn(move || {
-            // let res = ThreadPriority::Min.set_for_current();
-            populate_trades(md_copy, s_t_p_copy, batch);
+            populate_trades(trades, sym_to_pair, batch);
         });
         threads.push(th);
     }

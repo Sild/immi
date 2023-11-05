@@ -1,8 +1,7 @@
-use std::{collections::HashMap, collections::HashSet, ops::Add};
+use std::{collections::HashMap, collections::HashSet};
 
 use crate::objects::{SymbolLoops, SymbolPair};
 use logging_timer::stime;
-
 
 fn find_loop_dfs<'a>(
     graph: &HashMap<&'a String, HashSet<&'a String>>,
@@ -15,9 +14,9 @@ fn find_loop_dfs<'a>(
         if **e == **cur_path.first().unwrap() && cur_path.len() > 2 {
             cur_path.push(e);
             let r = cur_path
-            .iter()
-            .map(|x| String::from(*x))
-            .collect::<Vec<String>>();
+                .iter()
+                .map(|x| String::from(*x))
+                .collect::<Vec<String>>();
             result.add(&r);
             log::trace!("added route: {:?}", r);
             cur_path.pop();
@@ -46,7 +45,12 @@ pub fn find_loops(pairs: &[SymbolPair]) -> SymbolLoops {
 
     let mut counter = 1usize;
     for elem in graph.keys() {
-        log::trace!("find_loops: start with elem: {} ({}/{})", elem, counter, graph.len());
+        log::trace!(
+            "find_loops: start with elem: {} ({}/{})",
+            elem,
+            counter,
+            graph.len()
+        );
         counter += 1;
         let mut cur_path = vec![*elem];
         let mut visited = HashSet::from([*elem]);

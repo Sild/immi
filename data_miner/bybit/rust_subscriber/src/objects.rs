@@ -1,4 +1,9 @@
-use std::{collections::HashMap, error::Error, fs, fmt::{Display, self}};
+use std::{
+    collections::HashMap,
+    error::Error,
+    fmt::{self, Display},
+    fs,
+};
 
 use crate::algo;
 
@@ -18,7 +23,7 @@ impl SymbolPair {
 #[derive(Default, Debug, Clone)]
 pub struct SymbolLoops {
     pub routes: HashMap<String, Vec<String>>,
-    pairs: Vec<SymbolPair>
+    pairs: Vec<SymbolPair>,
 }
 
 impl SymbolLoops {
@@ -46,7 +51,8 @@ impl SymbolLoops {
     }
 
     pub fn add(&mut self, route: &[String]) {
-        self.routes.insert(route.first().unwrap().clone(), route.to_vec());
+        self.routes
+            .insert(route.first().unwrap().clone(), route.to_vec());
     }
 
     pub fn to_file(&self, file_path: &str) -> Result<(), std::io::Error> {
@@ -60,7 +66,9 @@ impl SymbolLoops {
 
 impl Display for SymbolLoops {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut repr = String::from(format!("===SymbolLoops State===\npairs ({}):\n", self.pairs.len()).as_str());
+        let mut repr = String::from(
+            format!("===SymbolLoops State===\npairs ({}):\n", self.pairs.len()).as_str(),
+        );
 
         for p in self.pairs.iter() {
             repr.push_str(format!("{}->{}\n", p.first, p.second).as_str());
