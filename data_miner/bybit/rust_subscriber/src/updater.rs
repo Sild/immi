@@ -35,13 +35,13 @@ pub fn populate_trades(
         SpotPublicResponse::Op(_res) => {
             // println!("Op: {:?}", res)
         }
-        _ => println!("Unexpected event"),
+        _ => log::warn!("Unexpected event"),
     };
 
     let mut client = WebSocketApiClient::spot().build();
 
     for p in symbols {
-        println!("Subscribing to symbol {}", p.to_bybit_symbol());
+        log::trace!("Subscribing to symbol {}", p.to_bybit_symbol());
         client.subscribe_trade(p.to_bybit_symbol());
     }
 
@@ -60,9 +60,9 @@ pub fn run_trades_population(
     for i in (0..pairs.len()).step_by(SUBSCRIBE_BATCH_SIZE) {
         let after_last = cmp::min(i + SUBSCRIBE_BATCH_SIZE, pairs.len());
         let batch = pairs[i..after_last].to_vec();
-        println!(
+        log::info!(
             "starting thread for symbols: {:?} {}/{})",
-            batch,
+            batch.iter().map(|x| x.to_bybit_symbol()).collect::<Vec<String>>(),
             after_last,
             pairs.len()
         );

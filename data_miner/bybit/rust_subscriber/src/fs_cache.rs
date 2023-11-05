@@ -3,7 +3,7 @@ use std::{
     io::Error,
 };
 
-use crate::objects;
+use crate::objects::{self, SymbolLoops};
 
 pub fn read_pairs(fname: &str) -> Result<Vec<objects::SymbolPair>, Error> {
     let lines: Vec<String> = read_to_string(fname)?.lines().map(String::from).collect();
@@ -27,24 +27,12 @@ pub fn write_pairs(pairs: &[objects::SymbolPair], fname: &str) -> Result<(), Err
     fs::write(fname, data)
 }
 
-pub fn read_loops(fname: &str) -> Result<Vec<objects::LoopRoute>, Error> {
+pub fn read_loops(fname: &str) -> Result<SymbolLoops, Error> {
     let lines: Vec<String> = read_to_string(fname)?.lines().map(String::from).collect();
 
-    let mut res = Vec::default();
+    let mut res = SymbolLoops::default();
     for l in lines {
-        res.push(objects::LoopRoute::from_str(&l));
+        res.add_from_str(l.as_str());
     }
     Ok(res)
-}
-
-pub fn write_loops(pairs: &[objects::LoopRoute], fname: &str) -> Result<(), Error> {
-    let mut data = String::default();
-    for l in pairs.iter() {
-        let mut line = String::default();
-        for e in l.route.iter() {
-            line.push_str(format!("{},", e).as_str());
-        }
-        data.push_str(format!("{}\n", line).as_str());
-    }
-    fs::write(fname, data)
 }
