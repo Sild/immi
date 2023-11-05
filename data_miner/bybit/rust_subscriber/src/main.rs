@@ -1,109 +1,48 @@
-
-
+use std::collections::HashMap;
 use std::io::Error;
-use std::fs::read_to_string;
+use std::sync::{Arc, Mutex};
+use std::thread::sleep;
+use std::time::Duration;
 
-use bybit::ws::response::SpotPublicResponse;
+mod algo;
+mod fs_cache;
+mod market_data;
+mod objects;
+mod updater;
+extern crate bybit;
+const PAIRS_PATH: &str = "../routes.txt";
+const LOOP_PATH: &str = "../symbol_loops.csv";
 
+fn main() -> Result<(), Error> {
+    let possible_pairs = fs_cache::read_pairs(PAIRS_PATH)?;
+    let sym_to_pair = Arc::new(
+        possible_pairs
+            .iter()
+            .map(|p| (p.to_bybit_symbol(), p.clone()))
+            .collect::<HashMap<_, _>>(),
+    );
 
-use bybit::WebSocketApiClient;
+    let _loops = fs_cache::read_loops(LOOP_PATH)?;
 
-#[derive(Debug)]
+    let market_data = Arc::new(Mutex::new(market_data::MarketData::new(&possible_pairs)));
 
-struct SymbolPair {
-    first: String,
-    second: String,
+    let _threads =
+        updater::run_trades_population(&market_data, &sym_to_pair, &possible_pairs);
 
-}
-
-impl SymbolPair {
-    fn to_bybit_symbol(&self) -> String {
-        return format!("{}{}", self.first, self.second)
-    }
-}
-
-#[derive(Debug)]
-
-struct LoopRoute {
-    route: Vec<String>
-}
-
-impl LoopRoute {
-    fn new(loop_str: &str) -> Self {
-        let route = loop_str.split(' ').map(|f| f.to_string()).collect::<Vec<String>>();
-        return LoopRoute {
-            route
-         }
-    }
-}
-
-fn read_pairs(fname: &str) -> Result<Vec<SymbolPair>, Error> {
-    let lines: Vec<String> = read_to_string(fname)?
-    .lines()
-    .map(String::from)
-    .collect();
-
-    let mut res = Vec::default();
-    for l in lines {
-        let split: Vec<&str> = l.split(" ").collect();
-        res.push(SymbolPair{
-            first: split[0].to_string(),
-            second: split[1].to_string()
-        })
-    }
-    Ok(res)
-}
-
-fn read_loops(fname: &str) -> Result<Vec<LoopRoute>, Error> {
-    let lines: Vec<String> = read_to_string(fname)?
-    .lines()
-    .map(String::from)
-    .collect();
-
-    let mut res = Vec::default();
-    for l in lines {
-        res.push(LoopRoute::new(&l));
-    }
-    Ok(res)
-}
-
-fn main()-> Result<(), Error> {
-    let pairs = read_pairs("../routes.txt")?;
-    let _loops = read_loops("../symbol_loops.csv")?;
-
-
-    let mut client = WebSocketApiClient::spot().build();
-
-    for p in pairs {
-        println!("Subscribing to symbol {}", p.to_bybit_symbol());
-        client.subscribe_trade("ETHUSDT");
-        break;
+    loop {
+        let rt_locked = market_data.lock().unwrap();
+        println!(
+            "recent_trades size: total={}, filled={}, empty={}",
+            rt_locked.trades_zero_cnt,
+            rt_locked.trades_total_cnt - rt_locked.trades_zero_cnt,
+            rt_locked.trades_zero_cnt
+        );
+        sleep(Duration::from_secs(2));
     }
 
-    // for p in pairs {
-    //     println!("{:?}", p);
+    // for t in threads {
+    //     let _ = t.join();
     // }
 
-    // for l in loops {
-    //     println!("{:?}", l)
-    // }
-
-    // client.subscribe_trade(symbol);
-
-    let callback = |res: SpotPublicResponse| match res {
-        // SpotPublicResponse::Orderbook(res) => println!("Orderbook: {:?}", res),
-        SpotPublicResponse::Trade(res) => println!("Trade: {:?}", res),
-        // SpotPublicResponse::Ticker(res) => println!("Ticker: {:?}", res),
-        // SpotPublicResponse::Kline(res) => println!("Kline: {:?}", res),
-        // SpotPublicResponse::LtTicker(res) => println!("LtTicker: {:?}", res),
-        // SpotPublicResponse::LtNav(res) => println!("LtNav: {:?}", res),
-        SpotPublicResponse::Op(res) => println!("Op: {:?}", res),
-        _ => println!("Unexpected event")
-    };
-    
-    match client.run(callback) {
-        Ok(_) => {}
-        Err(e) => println!("{}", e),
-    }
     Ok(())
 }

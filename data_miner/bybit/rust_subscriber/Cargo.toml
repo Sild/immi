@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 rust-bybit = "0.2"
+crypto-rest-client = "1.0.1"
