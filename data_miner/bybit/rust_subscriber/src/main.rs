@@ -1,3 +1,6 @@
+#![feature(test)]
+extern crate test;
+
 use std::collections::HashMap;
 use std::io::Error;
 use std::sync::{Arc, Mutex};

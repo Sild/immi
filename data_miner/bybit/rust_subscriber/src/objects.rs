@@ -2,7 +2,7 @@ use std::{collections::HashMap, error::Error, fs, fmt::{Display, self}};
 
 use crate::algo;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, Ord, PartialEq, PartialOrd)]
 
 pub struct SymbolPair {
     pub first: String,
@@ -24,7 +24,16 @@ pub struct SymbolLoops {
 impl SymbolLoops {
     pub fn recalc(&mut self, pairs: &[SymbolPair]) {
         self.pairs = pairs.to_vec();
-        self.routes = algo::find_loops(pairs).routes;
+        self.pairs.sort();
+        self.pairs.dedup();
+
+        let mut pairs_str = String::default();
+        for p in self.pairs.iter() {
+            pairs_str.push_str(format!("{}->{}\n", p.first, p.second).as_str());
+        }
+        log::trace!("run recalc based on pairs:\n{}", pairs_str);
+
+        self.routes = algo::find_loops(&self.pairs).routes;
     }
 
     pub fn add_from_str(&mut self, loop_str: &str) {
@@ -51,12 +60,12 @@ impl SymbolLoops {
 
 impl Display for SymbolLoops {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut repr = String::from("===SymbolLoops State===\npairs:\n");
+        let mut repr = String::from(format!("===SymbolLoops State===\npairs ({}):\n", self.pairs.len()).as_str());
 
         for p in self.pairs.iter() {
             repr.push_str(format!("{}->{}\n", p.first, p.second).as_str());
         }
-        repr.push_str("loops:\n");
+        repr.push_str(format!("loops ({}):\n", self.routes.len()).as_str());
         for r in self.routes.values() {
             repr.push_str(format!("{}\n", r.join("->")).as_str());
         }

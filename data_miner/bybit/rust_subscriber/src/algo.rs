@@ -3,8 +3,9 @@ use std::{collections::HashMap, collections::HashSet, ops::Add};
 use crate::objects::{SymbolLoops, SymbolPair};
 use logging_timer::stime;
 
+
 fn find_loop_dfs<'a>(
-    graph: &HashMap<&'a String, Vec<&'a String>>,
+    graph: &HashMap<&'a String, HashSet<&'a String>>,
     cur_path: &mut Vec<&'a String>,
     visited: &mut HashSet<&'a String>,
     result: &mut SymbolLoops,
@@ -35,17 +36,17 @@ fn find_loop_dfs<'a>(
 
 #[stime("info")]
 pub fn find_loops(pairs: &[SymbolPair]) -> SymbolLoops {
-    let mut graph: HashMap<&String, Vec<&String>> = HashMap::default();
+    let mut graph: HashMap<&String, HashSet<&String>> = HashMap::default();
     for p in pairs.iter() {
-        graph.entry(&p.first).or_default().push(&p.second);
-        graph.entry(&p.second).or_default().push(&p.first);
+        graph.entry(&p.first).or_default().insert(&p.second);
+        graph.entry(&p.second).or_default().insert(&p.first);
     }
 
     let mut result = SymbolLoops::default();
 
     let mut counter = 1usize;
     for elem in graph.keys() {
-        log::debug!("find_loops: start with elem: {} ({}/{})", elem, counter, graph.len());
+        log::trace!("find_loops: start with elem: {} ({}/{})", elem, counter, graph.len());
         counter += 1;
         let mut cur_path = vec![*elem];
         let mut visited = HashSet::from([*elem]);
@@ -53,3 +54,42 @@ pub fn find_loops(pairs: &[SymbolPair]) -> SymbolLoops {
     }
     result
 }
+
+// #[cfg(test)]
+// mod tests {
+//     use crate::{helpers, fs_cache};
+
+//     use super::*;
+//     use test::{Bencher};
+
+//     #[bench]
+//     fn test_find_loops_bench30(b: &mut Bencher) {
+//         let pairs = fs_cache::read_pairs("../test_data/edges_30.txt").unwrap();
+//         b.iter(
+//             || {
+//                 let loops = find_loops(&pairs);
+//             }
+//         );
+//     }
+
+//     #[bench]
+//     fn test_find_loops_bench90(b: &mut Bencher) {
+//         let pairs = fs_cache::read_pairs("../test_data/edges_90.txt").unwrap();
+//         b.iter(
+//             || {
+//                 let loops = find_loops(&pairs);
+//             }
+//         );
+//     }
+
+//     #[bench]
+//     fn test_find_loops_bench180(b: &mut Bencher) {
+//         let pairs = fs_cache::read_pairs("../test_data/edges_180.txt").unwrap();
+//         b.iter(
+//             || {
+//                 let loops = find_loops(&pairs);
+//             }
+//         );
+
+//     }
+// }

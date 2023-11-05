@@ -5,6 +5,9 @@ use std::{
     thread::{self, JoinHandle},
 };
 
+use thread_priority::*;
+use thread_priority::ThreadBuilderExt;
+
 use bybit::{ws::response::SpotPublicResponse, WebSocketApiClient};
 
 use crate::{
@@ -62,13 +65,18 @@ pub fn run_trades_population(
         let batch = pairs[i..after_last].to_vec();
         log::info!(
             "starting thread for symbols: {:?} {}/{})",
-            batch.iter().map(|x| x.to_bybit_symbol()).collect::<Vec<String>>(),
+            batch
+                .iter()
+                .map(|x| x.to_bybit_symbol())
+                .collect::<Vec<String>>(),
             after_last,
             pairs.len()
         );
         let md_copy = market_data.clone();
         let s_t_p_copy = sym_to_pair.clone();
+
         let th = thread::spawn(move || {
+            // let res = ThreadPriority::Min.set_for_current();
             populate_trades(md_copy, s_t_p_copy, batch);
         });
         threads.push(th);
